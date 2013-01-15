@@ -1,0 +1,4 @@
+*.py?
+*.sw?
+.DS_Store
+*.egg-info

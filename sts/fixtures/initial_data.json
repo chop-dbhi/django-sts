@@ -1,0 +1,9 @@
+[
+    {
+        "model": "sts.state",
+        "pk": 1,
+        "fields": {
+            "name": "(In Transition)"
+        }
+    }
+]
