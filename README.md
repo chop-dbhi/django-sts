@@ -33,13 +33,30 @@ time.sleep(2)
 system.end_transition('Door Closed')
 ```
 
-`System`s can also be associated directly to an object using Django's
-ContentTypes framework.
+A model object can be associated directly with a `System` using Django's
+ContentTypes framework generic foreign keys.
 
 ```python
 door = Door.objects.get(name='Door #1')
 system = System(content_object=door)
 # ...
+```
+
+`System` objects have a few extra conveniences:
+
+```python
+# number of transitions
+len(system) == system.length
+
+# iteration starting with the first transition
+for trans in system:
+    ...
+
+# indexing and slices
+system[:3]  # first 3 transitions
+system[-3:] # last 3 transitions
+system[1:3] # arbitrary slice
+system[2]   # specific transition
 ```
 
 This enables bringing in django-sts to an existing model to begin tracking
