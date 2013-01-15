@@ -74,7 +74,7 @@ class System(models.Model):
         return True
 
     def __iter__(self):
-        for transition in self.transitions.all():
+        for transition in self.transitions.iterator():
             yield transition
 
     @property

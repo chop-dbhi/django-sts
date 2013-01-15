@@ -21,16 +21,18 @@ class StateTestCase(TestCase):
 
 
 class SystemTestCase(TestCase):
-    def test_simple(self):
-        system = System()
-        system.save()
-        system.transition('Initialize', 'Initialized')
+    def setUp(self):
+        self.system = System()
+        self.system.save()
 
+    def test_simple(self):
+        system = self.system
+
+        system.transition('Initialize', 'Initialized')
         self.assertEqual(len(system), 1)
 
     def test_long(self):
-        system = System()
-        system.save()
+        system = self.system
 
         # Specify the event..
         system.start_transition('Initialize')
@@ -59,9 +61,14 @@ class SystemTestCase(TestCase):
         self.assertEqual(State.objects.count(), 3)
         self.assertEqual(Event.objects.count(), 3)
 
+    def test_iteration(self):
+        system = self.system
+
+        system.transition('Buckle Shoe', 'Shoe Buckled')
+        system.transition('Close Door', 'Door Closed')
+
         # Test iteration
         self.assertEqual([str(t.state) for t in system], [
-            'Initialized',
-            'Saved',
-            'Saved',
+            'Shoe Buckled',
+            'Door Closed',
         ])
