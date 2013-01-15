@@ -72,3 +72,35 @@ class SystemTestCase(TestCase):
             'Shoe Buckled',
             'Door Closed',
         ])
+
+    def test_getitem(self):
+        system = self.system
+
+        self.assertEqual(system[:3], [])
+        self.assertEqual(system[2:3], [])
+        self.assertRaises(IndexError, system.__getitem__, 5)
+        self.assertRaises(IndexError, system.__getitem__, slice(None, None, 2))
+        self.assertRaises(ValueError, system.__getitem__, slice(None, None))
+
+        for i in range(1, 6):
+            system.transition('Incr 1', 'Count {}'.format(i))
+
+        # Don't be confused.. indexing is zero-based, while counting is 1-based
+        self.assertEqual([str(t.state) for t in system[:3]],
+            ['Count 1', 'Count 2', 'Count 3'])
+
+        self.assertEqual([str(t.state) for t in system[-3:]],
+            ['Count 3', 'Count 4', 'Count 5'])
+
+        self.assertEqual([str(t.state) for t in system[:-3]],
+            ['Count 1', 'Count 2'])
+
+        self.assertEqual([str(t.state) for t in system[1:3]],
+            ['Count 2', 'Count 3'])
+
+        self.assertEqual(str(system[3].state), 'Count 4')
+
+        # Bad slices..
+        self.assertEqual(system[-1:-3], [])
+        self.assertEqual(system[-1:2], [])
+        self.assertEqual(system[1:1], [])

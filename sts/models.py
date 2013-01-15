@@ -73,6 +73,52 @@ class System(models.Model):
     def __nonzero__(self):
         return True
 
+    @transaction.commit_on_success
+    def __getitem__(self, idx):
+        queryset = self.transitions.order_by('start_time')
+        if isinstance(idx, slice):
+            if idx.step is not None:
+                raise IndexError('Index stepping is not supported.')
+
+            if idx.start is None and idx.stop is None:
+                raise ValueError('List cloning is not supported.')
+
+            if idx.start is not None and idx.stop is not None:
+                # Backwards..
+                if idx.stop < idx.start  or idx.start < 0 and idx.stop > 0:
+                    return []
+
+                # Equal, nothing to do
+                if idx.stop == idx.start:
+                    return []
+
+            # Negative indexing.. QuerySets don't support these, so we take it
+            # from the front and reverse it.
+            if idx.start is not None and idx.start < 0:
+                if idx.stop is None:
+                    start = None
+                    stop = abs(idx.start)
+                else:
+                    start = abs(idx.stop)
+                    stop = abs(idx.stop + idx.start)
+
+                idx = slice(start, stop)
+                trans = list(queryset.order_by('-start_time')[idx])
+                trans.reverse()
+            elif idx.stop is not None and idx.stop < 0:
+                start = idx.start
+                stop = self.length + idx.stop
+                idx = slice(start, stop)
+                trans = list(queryset[idx])
+            else:
+                trans = list(queryset[idx])
+        else:
+            try:
+                trans = queryset[idx]
+            except Transition.DoesNotExist:
+                raise IndexError
+        return trans
+
     def __iter__(self):
         for transition in self.transitions.iterator():
             yield transition
