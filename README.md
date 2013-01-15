@@ -1,7 +1,7 @@
 # State Transition System (STS) for Django
 
 [State Transition Systems][1] have less constraints than Finite State
-Automata, and can be molded into various use cases.
+Automata, and can be utilized for various use cases.
 
 The core components include:
 
@@ -10,8 +10,8 @@ The core components include:
 - Transition
 - System
 
-**Events** cause a **transition** from some **state** (or none if this is the
-first transition) to a new state for a given **system**.
+**Events** cause a **transition** from some **state** to a new state within
+a given **system**.
 
 The API supports defining _immediate_ transitions and _long-running_
 transitions. Now, for a riveting example..
@@ -34,7 +34,7 @@ system.end_transition('Door Closed')
 ```
 
 `System`s can also be associated directly to an object using Django's
-ContentType framework.
+ContentTypes framework.
 
 ```python
 door = Door.objects.get(name='Door #1')
@@ -45,7 +45,7 @@ system = System(content_object=door)
 This enables bringing in django-sts to an existing model to begin tracking
 states of objects.
 
-If even comes with an abstract `STSModel` that augments a model with the above
+It even comes with an abstract `STSModel` that augments a model with the above
 methods for seamless integration (it does not add any model fields):
 
 ```python
