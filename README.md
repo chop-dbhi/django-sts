@@ -55,6 +55,7 @@ for trans in system:
 # indexing and slices
 system[:3]  # first 3 transitions
 system[-3:] # last 3 transitions
+system[:-3] # all except the last 3 transitions
 system[1:3] # arbitrary slice
 system[2]   # specific transition
 ```
