@@ -1,0 +1,122 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>Django-STS by cbmi</title>
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+    <script src="javascripts/respond.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <!--[if lt IE 8]>
+    <link rel="stylesheet" href="stylesheets/ie.css">
+    <![endif]-->
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+
+  </head>
+  <body>
+      <div id="header">
+        <nav>
+          <li class="fork"><a href="https://github.com/cbmi/django-sts">View On GitHub</a></li>
+          <li class="downloads"><a href="https://github.com/cbmi/django-sts/zipball/master">ZIP</a></li>
+          <li class="downloads"><a href="https://github.com/cbmi/django-sts/tarball/master">TAR</a></li>
+          <li class="title">DOWNLOADS</li>
+        </nav>
+      </div><!-- end header -->
+
+    <div class="wrapper">
+
+      <section>
+        <div id="title">
+          <h1>Django-STS</h1>
+          <p>State Transition System for Django</p>
+          <hr>
+          <span class="credits left">Project maintained by <a href="https://github.com/cbmi">cbmi</a></span>
+          <span class="credits right">Hosted on GitHub Pages &mdash; Theme by <a href="http://twitter.com/#!/michigangraham">mattgraham</a></span>
+        </div>
+
+        <h1>State Transition System (STS) for Django</h1>
+
+<p><a href="http://en.wikipedia.org/wiki/State_transition_system">State Transition Systems</a> have less constraints than Finite State
+Automata, and can be utilized for various use cases.</p>
+
+<p>The core components include:</p>
+
+<ul>
+<li>State</li>
+<li>Event</li>
+<li>Transition</li>
+<li>System</li>
+</ul><p><strong>Events</strong> cause a <strong>transition</strong> from some <strong>state</strong> to a new state within
+a given <strong>system</strong>.</p>
+
+<p>The API supports defining <em>immediate</em> transitions and <em>long-running</em>
+transitions. Now, for a riveting example..</p>
+
+<div class="highlight"><pre><span class="n">system</span> <span class="o">=</span> <span class="n">System</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s">'Example 1'</span><span class="p">)</span>
+<span class="n">system</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+
+<span class="c"># Immediate transition.. event =&gt; state</span>
+<span class="n">system</span><span class="o">.</span><span class="n">transition</span><span class="p">(</span><span class="s">'Open Door'</span><span class="p">,</span> <span class="s">'Door Opened'</span><span class="p">)</span>
+
+<span class="c"># 'Long-running' transitions.. event happens</span>
+<span class="n">system</span><span class="o">.</span><span class="n">start_transition</span><span class="p">(</span><span class="s">'Close Door Slowly'</span><span class="p">)</span>
+
+<span class="c"># Time passes..</span>
+<span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+
+<span class="c"># The resulting state..</span>
+<span class="n">system</span><span class="o">.</span><span class="n">end_transition</span><span class="p">(</span><span class="s">'Door Closed'</span><span class="p">)</span>
+</pre></div>
+
+<p>A model object can be associated directly with a <code>System</code> using Django's
+ContentTypes framework generic foreign keys.</p>
+
+<div class="highlight"><pre><span class="n">door</span> <span class="o">=</span> <span class="n">Door</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s">'Door #1'</span><span class="p">)</span>
+<span class="n">system</span> <span class="o">=</span> <span class="n">System</span><span class="p">(</span><span class="n">content_object</span><span class="o">=</span><span class="n">door</span><span class="p">)</span>
+<span class="c"># ...</span>
+</pre></div>
+
+<p><code>System</code> objects have a few extra conveniences:</p>
+
+<div class="highlight"><pre><span class="c"># number of transitions</span>
+<span class="nb">len</span><span class="p">(</span><span class="n">system</span><span class="p">)</span> <span class="o">==</span> <span class="n">system</span><span class="o">.</span><span class="n">length</span>
+
+<span class="c"># iteration starting with the first transition</span>
+<span class="k">for</span> <span class="n">trans</span> <span class="ow">in</span> <span class="n">system</span><span class="p">:</span>
+    <span class="o">...</span>
+
+<span class="c"># indexing and slices</span>
+<span class="n">system</span><span class="p">[:</span><span class="mi">3</span><span class="p">]</span>  <span class="c"># first 3 transitions</span>
+<span class="n">system</span><span class="p">[</span><span class="o">-</span><span class="mi">3</span><span class="p">:]</span> <span class="c"># last 3 transitions</span>
+<span class="n">system</span><span class="p">[:</span><span class="o">-</span><span class="mi">3</span><span class="p">]</span> <span class="c"># all except the last 3 transitions</span>
+<span class="n">system</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">3</span><span class="p">]</span> <span class="c"># arbitrary slice</span>
+<span class="n">system</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>   <span class="c"># specific transition</span>
+</pre></div>
+
+<p>This enables bringing in django-sts to an existing model to begin tracking
+states of objects.</p>
+
+<p>It even comes with an abstract <code>STSModel</code> that augments a model with the above
+methods for seamless integration (it does not add any model fields):</p>
+
+<div class="highlight"><pre><span class="k">class</span> <span class="nc">Door</span><span class="p">(</span><span class="n">STSModel</span><span class="p">):</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+
+<span class="n">door</span> <span class="o">=</span> <span class="n">Door</span><span class="p">()</span>
+<span class="n">door</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+<span class="n">door</span><span class="o">.</span><span class="n">transition</span><span class="p">(</span><span class="s">'Close Door'</span><span class="p">,</span> <span class="s">'Door Closed'</span><span class="p">)</span>
+</pre></div>
+
+<p>The library leaves it up to the application to implement the constraints of a
+finite state automata/machine.</p>
+      </section>
+
+    </div>
+    <!--[if !IE]><script>fixScale(document);</script><![endif]-->
+    
+  </body>
+</html>
