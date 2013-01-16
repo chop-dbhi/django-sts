@@ -255,7 +255,8 @@ class STSModel(models.Model):
 
     def get_sts(self):
         "Returns a System instance representing this object."
-        return System.objects.get_or_create(content_object=self)
+        from .shortcuts import _get_sts
+        return _get_sts(self)
 
     def transition(self, *args, **kwargs):
         "Creates an immediate state transition."

@@ -104,3 +104,12 @@ class SystemTestCase(TestCase):
         self.assertEqual(system[-1:-3], [])
         self.assertEqual(system[-1:2], [])
         self.assertEqual(system[1:1], [])
+
+    def test_shortcuts(self):
+        from django.contrib.auth.models import User
+        from sts.shortcuts import transition, start_transition, end_transition
+
+        user = User.objects.create_user(username='test', password='test',
+            email='test@example.com')
+
+        transition(user, 'Creating User', 'User Created')

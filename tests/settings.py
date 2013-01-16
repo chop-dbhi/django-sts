@@ -7,6 +7,7 @@ DATABASES = {
 
 INSTALLED_APPS = (
     'sts',
+    'django.contrib.auth',
     'django.contrib.contenttypes',
     'tests',
 )
