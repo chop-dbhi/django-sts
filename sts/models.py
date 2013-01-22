@@ -194,11 +194,14 @@ class System(models.Model):
         if end_time is None:
             end_time = datetime.now()
 
-
         transition = self.transitions.get(state=State.TRANSITION)
+
+        # Convert to milliseconds
+        duration = int(round((end_time - transition.start_time).total_seconds() * 1000))
+
         transition.state = state
         transition.end_time = end_time
-        transition.duration = (end_time - transition.start_time).seconds
+        transition.duration = duration
 
         if save:
             transition.save()
@@ -229,7 +232,8 @@ class System(models.Model):
         if end_time is None:
             end_time = now
 
-        duration = (end_time - start_time).seconds
+        # Convert to milliseconds
+        duration = int(round((end_time - start_time).total_seconds() * 1000))
 
         transition = Transition(system=self, event=event, duration=duration,
             state=state, start_time=start_time, end_time=end_time)
@@ -254,7 +258,7 @@ class Transition(models.Model):
     start_time = models.DateTimeField()
     end_time = models.DateTimeField(null=True, blank=True)
 
-    duration = models.PositiveIntegerField(null=True, blank=True)
+    duration = models.PositiveIntegerField('duration in milliseconds', null=True, blank=True)
 
     class Meta(object):
         ordering = ('start_time',)
