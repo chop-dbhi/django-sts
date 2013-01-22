@@ -123,6 +123,22 @@ class System(models.Model):
         for transition in self.transitions.iterator():
             yield transition
 
+    @classmethod
+    def get(cls, obj, save=True):
+        "Returns a System instance representing this object."
+        if not isinstance(obj, models.Model):
+            raise TypeError('This classmethod only supports get Systems for model objects.')
+        if not obj.pk:
+            raise ValueError('Model object has no primary key.')
+        ct = ContentType.objects.get_for_model(obj.__class__)
+        try:
+            obj = cls.objects.get(content_type=ct, object_id=obj.pk)
+        except cls.DoesNotExist:
+            obj = cls(content_type=ct, object_id=obj.pk)
+            if save:
+                obj.save()
+        return obj
+
     @property
     def length(self):
         return self.transitions.count()
@@ -255,27 +271,22 @@ class Transition(models.Model):
 class STSModel(models.Model):
     "Augments model for basic object state transitions."
 
-    def get_sts(self):
-        "Returns a System instance representing this object."
-        from .shortcuts import _get_sts
-        return _get_sts(self)
-
     def transition(self, *args, **kwargs):
         "Creates an immediate state transition."
         if not hasattr(self, '_sts'):
-            self._sts = self.get_sts()
+            self._sts = System.get(self)
         self._sts.transition(*args, **kwargs)
 
     def start_transition(self, *args, **kwargs):
         "Starts a state transition given some event."
         if not hasattr(self, '_sts'):
-            self._sts = self.get_sts()
+            self._sts = System.get(self)
         self._sts.start_transition(*args, **kwargs)
 
     def end_transition(self, *args, **kwargs):
         "Ends a state transition with some state."
         if not hasattr(self, '_sts'):
-            self._sts = self.get_sts()
+            self._sts = System.get(self)
         self._sts.end_transition(*args, **kwargs)
 
     class Meta(object):
