@@ -21,7 +21,7 @@ system = System(name='Example 1')
 system.save()
 
 # Immediate transition.. event => state
-system.transition('Open Door', 'Door Opened')
+system.transition('Door Opened', event='Open Door')
 
 # 'Long-running' transitions.. event happens
 system.start_transition('Close Door Slowly')
@@ -72,7 +72,7 @@ class Door(STSModel):
 
 door = Door()
 door.save()
-door.transition('Close Door', 'Door Closed')
+door.transition('Door Closed', event='Close Door')
 ```
 
 The library leaves it up to the application to implement the constraints of a

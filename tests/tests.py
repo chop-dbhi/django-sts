@@ -54,8 +54,8 @@ class SystemTestCase(TestCase):
         self.assertEqual(len(system), 1)
         self.assertRaises(STSError, system.end_transition, 'Initialized')
 
-        system.transition('Save by foobar', 'Saved')
-        system.transition('Save by admin', 'Saved')
+        system.transition('Saved', event='Save by foobar')
+        system.transition('Saved', event='Save by admin')
 
         self.assertEqual(len(system), 3)
         self.assertEqual(State.objects.count(), 3)
@@ -64,8 +64,8 @@ class SystemTestCase(TestCase):
     def test_iteration(self):
         system = self.system
 
-        system.transition('Buckle Shoe', 'Shoe Buckled')
-        system.transition('Close Door', 'Door Closed')
+        system.transition('Shoe Buckled', event='Buckle Shoe')
+        system.transition('Door Closed', event='Close Door')
 
         # Test iteration
         self.assertEqual([str(t.state) for t in system], [
@@ -83,7 +83,7 @@ class SystemTestCase(TestCase):
         self.assertRaises(ValueError, system.__getitem__, slice(None, None))
 
         for i in range(1, 6):
-            system.transition('Incr 1', 'Count {}'.format(i))
+            system.transition('Count {}'.format(i), event='Incr 1')
 
         # Don't be confused.. indexing is zero-based, while counting is 1-based
         self.assertEqual([str(t.state) for t in system[:3]],
@@ -113,3 +113,5 @@ class SystemTestCase(TestCase):
             email='test@example.com')
 
         transition(user, 'Creating User', 'User Created')
+        start_transition(user, 'Creating User')
+        end_transition(user, 'User Created')

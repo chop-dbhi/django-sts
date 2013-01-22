@@ -138,7 +138,7 @@ class System(models.Model):
         return self.transitions.filter(state=State.TRANSITION).exists()
 
     @transaction.commit_on_success
-    def start_transition(self, event, start_time=None, save=True):
+    def start_transition(self, event=None, start_time=None, save=True):
         """Creates and starts a transition if one is not already open.
 
         For long-running transitions, this method can be used at the start of a
@@ -190,7 +190,7 @@ class System(models.Model):
         return transition
 
     @transaction.commit_on_success
-    def transition(self, event, state, start_time=None, end_time=None, save=True):
+    def transition(self, state, event=None, start_time=None, end_time=None, save=True):
         """Create a transition in state. This means of transitioning is the most
         since this does not involve long-running transitions.
         """
@@ -229,7 +229,7 @@ class Transition(models.Model):
     system = models.ForeignKey(System, related_name='transitions')
 
     # The event that caused the state change
-    event = models.ForeignKey(Event, related_name='transitions')
+    event = models.ForeignKey(Event, null=True, blank=True, related_name='transitions')
 
     # The resulting state from this transition
     state = models.ForeignKey(State, related_name='transitions')
@@ -244,7 +244,9 @@ class Transition(models.Model):
         ordering = ('start_time',)
 
     def __unicode__(self):
-        return '{} => {}'.format(self.event, self.state)
+        if self.event_id:
+            return '{} => {}'.format(self.event, self.state)
+        return '{}'.format(self.state)
 
     def in_transition(self):
         return self.state_id == State.TRANSITION.pk
