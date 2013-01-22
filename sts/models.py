@@ -1,6 +1,7 @@
 from datetime import datetime
 from django.db import models, transaction
 from django.contrib.contenttypes.models import ContentType
+from django.utils.timesince import timesince
 from django.contrib.contenttypes import generic
 from .utils import classproperty
 
@@ -265,11 +266,27 @@ class Transition(models.Model):
 
     def __unicode__(self):
         if self.event_id:
-            return '{} => {}'.format(self.event, self.state)
-        return '{}'.format(self.state)
+            text = '{} => {}'.format(self.event, self.state)
+        else:
+            text = unicode(self.state)
+        if self.duration:
+            text = '{} ({})'.format(text, self.natural_duration)
+        elif self.in_transition():
+            text = '{} (in transition)'.format(text)
+        return text
 
     def in_transition(self):
         return self.state_id == State.TRANSITION.pk
+
+    @property
+    def natural_duration(self):
+        if not self.duration:
+            return
+        if self.duration < 1000:
+            return '{} milliseconds'.format(self.duration)
+        if self.duration < 60000:
+            return '{} seconds'.format(int(round(self.duration / 1000.0)))
+        return timesince(self.start_time, self.end_time)
 
 
 class STSModel(models.Model):
