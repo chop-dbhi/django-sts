@@ -33,6 +33,16 @@ time.sleep(2)
 system.end_transition('Door Closed')
 ```
 
+To remove the boilerplate from the above example, use the `transition`
+context manager instead:
+
+```python
+from sts.contextmanagers import transition
+
+with transition('Example 1', 'Door Closed', event='Close Door Slowly'):
+    time.sleep(2)
+```
+
 A model object can be associated directly with a `System` using Django's
 ContentTypes framework generic foreign keys.
 

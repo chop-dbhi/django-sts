@@ -115,3 +115,21 @@ class SystemTestCase(TestCase):
         transition(user, 'Creating User', 'User Created')
         start_transition(user, 'Creating User')
         end_transition(user, 'User Created')
+
+    def test_context_manager(self):
+        from sts.contextmanagers import transition
+
+        with transition('Sleeper', 'Awake', event='Nap'):
+            time.sleep(2)
+
+        system = System.objects.get(name='Sleeper')
+        self.assertEqual(system.current_state().name, 'Awake')
+
+        trans = system[0]
+        self.assertTrue(2000 < trans.duration < 3000)
+
+
+        with transition('Sleeper', 'Awake', event='Nap', fail_state='Annoyed'):
+            raise Exception
+
+        self.assertEqual(system.current_state().name, 'Annoyed')
