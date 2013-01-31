@@ -125,8 +125,20 @@ class System(models.Model):
             yield transition
 
     @classmethod
-    def get(cls, obj, save=True):
+    def get(cls, obj_or_name, save=True):
         "Returns a System instance representing this object."
+        # Already an instance
+        if isinstance(obj_or_name, cls):
+            return obj_or_name
+
+        # String, so get or create a system by this name
+        if isinstance(obj_or_name, basestring):
+            system, created = cls.objects.get_or_create(name=obj_or_name)
+            return system
+
+        # Fallback to model object
+        obj = obj_or_name
+
         if not isinstance(obj, models.Model):
             raise TypeError('This classmethod only supports get Systems for model objects.')
         if not obj.pk:
