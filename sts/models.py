@@ -68,11 +68,22 @@ class System(models.Model):
     class Meta(object):
         ordering = ('-modified',)
 
+    def __unicode__(self):
+        if self.name:
+            return self.name
+        if self.content_type_id:
+            return unicode(self.content_object)
+        return u'Unknown System'
+
     def __len__(self):
         return self.length
 
     def __nonzero__(self):
         return True
+
+    def __iter__(self):
+        for transition in self.transitions.iterator():
+            yield transition
 
     @transaction.commit_on_success
     def __getitem__(self, idx):
@@ -119,10 +130,6 @@ class System(models.Model):
             except Transition.DoesNotExist:
                 raise IndexError
         return trans
-
-    def __iter__(self):
-        for transition in self.transitions.iterator():
-            yield transition
 
     @classmethod
     def get(cls, obj_or_name, save=True):
