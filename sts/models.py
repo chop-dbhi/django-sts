@@ -200,7 +200,7 @@ class System(models.Model):
         return transition
 
     @transaction.commit_on_success
-    def end_transition(self, state, end_time=None, save=True):
+    def end_transition(self, state, end_time=None, message=None, save=True):
         """Ends a transition that has already been started.
 
         For long-running transitions, this method can be used at the end of a
@@ -220,6 +220,8 @@ class System(models.Model):
         duration = int(round((end_time - transition.start_time).total_seconds() * 1000))
 
         transition.state = state
+        if message is not None:
+            transition.message = message
         transition.end_time = end_time
         transition.duration = duration
 
@@ -229,7 +231,7 @@ class System(models.Model):
         return transition
 
     @transaction.commit_on_success
-    def transition(self, state, event=None, start_time=None, end_time=None, save=True):
+    def transition(self, state, event=None, start_time=None, end_time=None, message=None, save=True):
         """Create a transition in state. This means of transitioning is the most
         since this does not involve long-running transitions.
         """
@@ -256,7 +258,8 @@ class System(models.Model):
         duration = int(round((end_time - start_time).total_seconds() * 1000))
 
         transition = Transition(system=self, event=event, duration=duration,
-            state=state, start_time=start_time, end_time=end_time)
+            state=state, start_time=start_time, end_time=end_time,
+            message=message)
 
         if save:
             transition.save()
@@ -273,6 +276,10 @@ class Transition(models.Model):
 
     # The resulting state from this transition
     state = models.ForeignKey(State, related_name='transitions')
+
+    # A message about the transition. This could a description,
+    # reason for failure, etc.
+    message = models.TextField(null=True, blank=True)
 
     # Transition start/end time
     start_time = models.DateTimeField()
