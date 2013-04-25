@@ -321,23 +321,31 @@ class Transition(models.Model):
 class STSModel(models.Model):
     "Augments model for basic object state transitions."
 
-    def transition(self, *args, **kwargs):
-        "Creates an immediate state transition."
+    @property
+    def system(self):
         if not hasattr(self, '_sts'):
             self._sts = System.get(self)
-        self._sts.transition(*args, **kwargs)
+        return self._sts
+
+    def current_state(self, *args, **kwargs):
+        "Returns the current state."
+        self.system.current_state(*args, **kwargs)
+
+    def in_transition(self, *args, **kwargs):
+        "Returns whether the object is current in transition."
+        self.system.in_transition(*args, **kwargs)
+
+    def transition(self, *args, **kwargs):
+        "Creates an immediate state transition."
+        self.system.transition(*args, **kwargs)
 
     def start_transition(self, *args, **kwargs):
         "Starts a state transition given some event."
-        if not hasattr(self, '_sts'):
-            self._sts = System.get(self)
-        self._sts.start_transition(*args, **kwargs)
+        self.system.start_transition(*args, **kwargs)
 
     def end_transition(self, *args, **kwargs):
         "Ends a state transition with some state."
-        if not hasattr(self, '_sts'):
-            self._sts = System.get(self)
-        self._sts.end_transition(*args, **kwargs)
+        self.system.end_transition(*args, **kwargs)
 
     class Meta(object):
         abstract = True
