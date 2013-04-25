@@ -121,17 +121,23 @@ class SystemTestCase(TestCase):
     def test_context_manager(self):
         from sts.contextmanagers import transition
 
-        with transition('Sleeper', 'Awake', event='Nap'):
+        with transition('Sleeper', 'Awake', event='Nap') as trans:
             time.sleep(2)
+            trans.message = 'That was a short nap!'
 
         system = System.objects.get(name='Sleeper')
         self.assertEqual(system.current_state().name, 'Awake')
 
         trans = system[0]
+
+        self.assertEqual(trans.message, 'That was a short nap!')
         self.assertTrue(2000 < trans.duration < 3000)
 
 
-        with transition('Sleeper', 'Awake', event='Nap', fail_state='Annoyed'):
-            raise Exception
+        try:
+            with transition('Sleeper', 'Awake', event='Nap', fail_state='Annoyed'):
+                raise Exception
+        except:
+            pass
 
         self.assertEqual(system.current_state().name, 'Annoyed')
