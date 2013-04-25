@@ -100,6 +100,8 @@ class SystemTestCase(TestCase):
 
         self.assertEqual(str(system[3].state), 'Count 4')
 
+        self.assertEqual(str(system[-1].state), 'Count 5')
+
         # Bad slices..
         self.assertEqual(system[-1:-3], [])
         self.assertEqual(system[-1:2], [])

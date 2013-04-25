@@ -88,6 +88,7 @@ class System(models.Model):
     @transaction.commit_on_success
     def __getitem__(self, idx):
         queryset = self.transitions.order_by('start_time')
+
         if isinstance(idx, slice):
             if idx.step is not None:
                 raise IndexError('Index stepping is not supported.')
@@ -124,6 +125,8 @@ class System(models.Model):
                 trans = list(queryset[idx])
             else:
                 trans = list(queryset[idx])
+        elif idx < 0:
+            trans = queryset.order_by('-start_time')[abs(idx) - 1]
         else:
             try:
                 trans = queryset[idx]
