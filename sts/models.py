@@ -3,7 +3,8 @@ from django.db import models, transaction
 from django.contrib.contenttypes.models import ContentType
 from django.utils.timesince import timesince
 from django.contrib.contenttypes import generic
-from .utils import classproperty
+from django.utils import timezone
+from .utils import classproperty, get_duration, get_natural_duration
 
 
 class STSError(Exception):
@@ -192,7 +193,7 @@ class System(models.Model):
         state = State.TRANSITION
 
         if start_time is None:
-            start_time = datetime.now()
+            start_time = timezone.now()
 
         transition = Transition(system=self, event=event, state=state,
             start_time=start_time)
@@ -203,30 +204,31 @@ class System(models.Model):
         return transition
 
     @transaction.commit_on_success
-    def end_transition(self, state, end_time=None, message=None, save=True):
+    def end_transition(self, state, end_time=None, message=None,
+            failed=False, save=True):
+
         """Ends a transition that has already been started.
 
         For long-running transitions, this method can be used at the end of a
         transition that had been started with `start_transition`.
         """
+
         if not self.in_transition():
             raise STSError('Cannot end a transition while not in one.')
 
         state = State.get(state)
 
         if end_time is None:
-            end_time = datetime.now()
+            end_time = timezone.now()
 
         transition = self.transitions.get(state=State.TRANSITION)
 
-        # Convert to milliseconds
-        duration = int(round((end_time - transition.start_time).total_seconds() * 1000))
-
+        transition.duration = get_duration(transition.start_time, end_time)
         transition.state = state
+        transition.failed = failed
+        transition.end_time = end_time
         if message is not None:
             transition.message = message
-        transition.end_time = end_time
-        transition.duration = duration
 
         if save:
             transition.save()
@@ -234,10 +236,13 @@ class System(models.Model):
         return transition
 
     @transaction.commit_on_success
-    def transition(self, state, event=None, start_time=None, end_time=None, message=None, save=True):
+    def transition(self, state, event=None, start_time=None, end_time=None,
+            message=None, failed=False, save=True):
+
         """Create a transition in state. This means of transitioning is the most
         since this does not involve long-running transitions.
         """
+
         if self.in_transition():
             raise STSError('Cannot start transition while already in one.')
 
@@ -249,7 +254,7 @@ class System(models.Model):
         if state is None or state == State.TRANSITION:
             raise STSError('Cannot create a transition with an empty state.')
 
-        now = datetime.now()
+        now = timezone.now()
 
         if start_time is None:
             start_time = now
@@ -257,12 +262,11 @@ class System(models.Model):
         if end_time is None:
             end_time = now
 
-        # Convert to milliseconds
-        duration = int(round((end_time - start_time).total_seconds() * 1000))
+        duration = get_duration(start_time, end_time)
 
         transition = Transition(system=self, event=event, duration=duration,
             state=state, start_time=start_time, end_time=end_time,
-            message=message)
+            message=message, failed=failed)
 
         if save:
             transition.save()
@@ -275,7 +279,8 @@ class Transition(models.Model):
     system = models.ForeignKey(System, related_name='transitions')
 
     # The event that caused the state change
-    event = models.ForeignKey(Event, null=True, blank=True, related_name='transitions')
+    event = models.ForeignKey(Event, null=True, blank=True,
+        related_name='transitions')
 
     # The resulting state from this transition
     state = models.ForeignKey(State, related_name='transitions')
@@ -284,11 +289,15 @@ class Transition(models.Model):
     # reason for failure, etc.
     message = models.TextField(null=True, blank=True)
 
+    # Explicitly flag whether this transition failed
+    failed = models.BooleanField(default=False)
+
     # Transition start/end time
     start_time = models.DateTimeField()
     end_time = models.DateTimeField(null=True, blank=True)
 
-    duration = models.PositiveIntegerField('duration in milliseconds', null=True, blank=True)
+    duration = models.PositiveIntegerField('duration in milliseconds',
+        null=True, blank=True)
 
     class Meta(object):
         ordering = ('start_time',)
@@ -308,14 +317,16 @@ class Transition(models.Model):
         return self.state_id == State.TRANSITION.pk
 
     @property
+    def current_duration(self):
+        "Get the current duration relative to the current time."
+        if self.end_time:
+            return self.duration
+        return get_duration(self.start_time, self.end_time)
+
+    @property
     def natural_duration(self):
-        if not self.duration:
-            return
-        if self.duration < 1000:
-            return '{} milliseconds'.format(self.duration)
-        if self.duration < 60000:
-            return '{} seconds'.format(int(round(self.duration / 1000.0)))
-        return timesince(self.start_time, self.end_time)
+        "Get a human readable 'natural' duration."
+        return get_natural_duration(self.start_time, self.end_time)
 
 
 class STSModel(models.Model):
