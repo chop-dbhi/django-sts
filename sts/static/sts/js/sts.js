@@ -1,7 +1,6 @@
 (function() {
-    var root = this;
 
-    root.STS = STS = {
+    this.STS = STS = {
         Models: {},
         Views: {}
     };
@@ -18,19 +17,72 @@
                 '<div class=bar></div>',
             '</div>',
             '<div class=duration><%= data.natural_duration %></div>',
-        '</div>',
+        '</div>'
     ].join(' ')
 
 
+    var systemTemplate = [
+        '<div class=page-header>',
+            '<h2 class=name><%= data.name %></h2>',
+        '</div>',
+        '<p class=meta><%= data.created %> &middot; <%= data.modified %></p>',
+        '<div class=transitions></div>'
+    ].join(' ');
+
+
+    function renderTime(str) {
+        var date = Date.parse(str.split('.')[0]),
+            hours = date.getHours(),
+            minutes = '0' + date.getMinutes(),
+            seconds = '0' + date.getSeconds(),
+            tod = 'am';
+
+        if (hours > 12) {
+            hours = hours - 12;
+            tod = 'pm';
+        }
+
+        return [
+            date.getMonth() + 1,
+            date.getDate(),
+            date.getFullYear()
+        ].join('/') + ' @ ' + [
+            hours,
+            minutes.substr(minutes.length - 2),
+            seconds.substr(seconds.length - 2),
+        ].join(':') + ' ' + tod;
+    }
+
     var SystemModel = Backbone.Model.extend({
+        options: {
+            poll: true,
+            interval: 5000
+        },
+
         initialize: function() {
             this.transitions = new TransitionCollection;
+            this.fetch({parse: true});
+
+            if (this.options.poll) this.startPolling();
         },
 
         parse: function(attrs, options) {
             this.transitions.set(attrs.transitions, options);
             delete attrs.transitions;
             return attrs;
+        },
+
+        startPolling: function() {
+            this.stopPolling();
+
+            var _this = this;
+            this._pollInterval = setInterval(function() {
+                _this.fetch({parse: true});
+            }, this.options.interval);
+        },
+
+        stopPolling: function() {
+            clearInterval(this._pollInterval);
         }
     });
 
@@ -149,10 +201,47 @@
         }
     });
 
+
+    var System = Backbone.View.extend({
+        className: 'system',
+
+        template: _.template(systemTemplate, null, {
+            variable: 'data'
+        }),
+
+        initialize: function(options) {
+            this.$el.html(this.template(this.model.toJSON()));
+
+            this.$name = this.$('.name');
+            this.$meta = this.$('.meta');
+            this.$transitions = this.$('.transitions');
+
+            this.listenTo(this.model, 'change', this.render, this);
+
+            this.transitions = new Transitions(_.defaults({
+                el: this.$transitions,
+                collection: this.model.transitions
+            }, options));
+
+        },
+
+        render: function() {
+            this.$name.text(this.model.get('name'));
+
+            var created = renderTime(this.model.get('created')),
+                modified = renderTime(this.model.get('modified'));
+
+            this.$meta.html('created: ' + created + ' &middot; ' + 'modified: ' + modified);
+        }
+    });
+
+
     STS.Models.System = SystemModel;
     STS.Models.Transition = TransitionModel;
     STS.Models.Transitions = TransitionCollection;
 
+    STS.Views.System = System;
     STS.Views.Transition = Transition;
     STS.Views.Transitions = Transitions;
+
 })();

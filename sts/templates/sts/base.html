@@ -1,0 +1,26 @@
+<!doctype html>
+<html>
+    <head>
+        <link href="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.1/css/bootstrap-combined.no-icons.min.css" rel="stylesheet">
+        <link rel=stylesheet href="{{ STATIC_URL }}sts/css/style.css">
+    </head>
+    <body>
+
+        <div class=container-fluid>
+            <div class=row-fluid>
+                <div class="span8 offset2">
+                    {% block content %}{% endblock %}
+                </div>
+            </div>
+        </div>
+
+        <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+        <script src="//cdnjs.cloudflare.com/ajax/libs/datejs/1.0/date.min.js"></script>
+        <script src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.4.4/underscore-min.js"></script>
+        <script src="//cdnjs.cloudflare.com/ajax/libs/backbone.js/1.0.0/backbone-min.js"></script>
+        <script src="{{ STATIC_URL }}sts/js/sts.js"></script>
+
+        {% block scripts %}{% endblock %}
+    </body>
+</html>
+

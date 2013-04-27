@@ -1,48 +1,20 @@
-<!doctype html>
-<html>
-    <head>
-        <link rel=stylesheet href=http://twitter.github.io/bootstrap/assets/css/bootstrap.css>
-        <link rel=stylesheet href="{{ STATIC_URL }}sts/css/style.css">
-    </head>
-    <body>
-        <div class=container-fluid>
-            <div class=row-fluid>
-                <div class="span8 offset2">
-                    <h3>Monitoring: {{ system }}</h3>
-                    <div id=transitions></div>
-                </div>
-            </div>
-        </div>
+{% extends "sts/base.html" %}
 
-        <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
-        <script src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.4.4/underscore.js"></script>
-        <script src="//cdnjs.cloudflare.com/ajax/libs/backbone.js/1.0.0/backbone.js"></script>
+{% block content %}
+    <div class="system"></div>
+{% endblock %}
 
-        <script src="{{ STATIC_URL }}sts/js/sts.js"></script>
-
-        <script>
-            $(function() {
-                var system = new STS.Models.System;
-
-                // Set the system URL
-                system.url = function() {
-                    return '{% url "sts.views.system_detail" system.pk %}';
-                }
-
-                var transitions = new STS.Views.Transitions({
-                    el: '#transitions',
-                    collection: system.transitions
-                });
-                
-                // Initial fetch
-                system.fetch({parse: true});
-
-                // TODO add ability to toggle this
-                setInterval(function() {
-                    system.fetch({parse: true});
-                }, 5000);
+{% block scripts %}
+    <script>
+        $(function() {
+            var model = new STS.Models.System(null, {
+                url: '{% url "sts.views.system_detail" system.pk %}'
             });
-        </script>
-    </body>
-</html>
 
+            var view = new STS.Views.System({
+                el: '.system',
+                model: model
+            });
+        });
+    </script>
+{% endblock %}

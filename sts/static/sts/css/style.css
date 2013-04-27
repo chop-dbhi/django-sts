@@ -46,13 +46,13 @@
 
 .transition .progress {
     height: 8px;
-    margin: 0;
+    margin: 5px 0 0 0;
 }
 
 .transition .message {
     color: #999;
     font-size: 0.85em;
-    margin: 5px 0 0 0;
+    margin: 0;
 }
 
 .transition .message::before {
@@ -70,4 +70,11 @@
     font-weight: 500;
     left: 5px;
     top: 0;
+}
+
+.system {
+}
+
+.system .meta {
+    color: #ccc;
 }
