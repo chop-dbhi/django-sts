@@ -1,8 +1,11 @@
 (function() {
 
+    var STSconfig = this.STSconfig || {};
+
     this.STS = STS = {
         Models: {},
-        Views: {}
+        Views: {},
+        config: STSconfig
     };
 
     var transitionTemplate = [
@@ -22,11 +25,20 @@
 
 
     var systemTemplate = [
-        '<div class=page-header>',
-            '<h2 class=name><%= data.name %></h2>',
-        '</div>',
+        '<h3><span class=name><%= data.name %></span>',
+            '<% if (data.content_type) { %><small><%= data.content_type %></small><% } %>',
+        '</h3>',
         '<p class=meta><%= data.created %> &middot; <%= data.modified %></p>',
         '<div class=transitions></div>'
+    ].join(' ');
+
+
+    var systemLinkTemplate = [
+        '<i class=icon-circle></i>',
+        '<a href="<%= data.url %>">',
+            '<% if (data.content_type) { %><small><%= data.content_type %>:</small><% } %>',
+            '<%= data.name %>',
+        '</a>'
     ].join(' ');
 
 
@@ -53,9 +65,47 @@
         ].join(':') + ' ' + tod;
     }
 
+
+    // Read-only collection, this currently does not expect views to
+    // be removed
+    var CollectionView = Backbone.View.extend({
+        childView: Backbone.View,
+
+        initialize: function() {
+            this.listenTo(this.collection, 'reset', this.reset, this);
+            this.listenTo(this.collection, 'add', this.add, this);
+        },
+
+        render: function() {
+            return this;
+        },
+
+        renderChild: function(view) {
+            view.render();
+            this.$el.append(view.el);
+            return view;
+        },
+
+        reset: function(collection, options) {
+            var _this = this;
+            this.$el.empty();
+            collection.each(function(model) {
+                _this.add(model, collection, options);
+            });
+        },
+
+        add: function(model, collection, options) {
+            var view = new this.childView({
+                model: model
+            });
+            return this.renderChild(view);
+        }
+    });
+
+
     var SystemModel = Backbone.Model.extend({
         options: {
-            poll: true,
+            poll: false,
             interval: 5000
         },
 
@@ -63,10 +113,13 @@
             return this.get('url');
         },
 
-        initialize: function(attrs, options) {
-            _.extend(this.options, _.pick(options, ['poll', 'interval']));
+        constructor: function(attrs, options) {
             this.transitions = new TransitionCollection;
-            this.fetch({parse: true});
+            Backbone.Model.apply(this, arguments);
+            _.extend(this.options, _.pick(options, ['poll', 'interval']));
+        },
+
+        initialize: function() {
             if (this.options.poll) this.startPolling();
         },
 
@@ -80,6 +133,7 @@
 
         startPolling: function() {
             this.stopPolling();
+            this.fetch({parse: true});
 
             var _this = this;
             this._pollInterval = setInterval(function() {
@@ -94,23 +148,20 @@
 
 
     var SystemCollection = Backbone.Collection.extend({
-        model: function(attrs, options) {
-            options.poll = false;
-            return new SystemModel(attrs, options);
-        },
+        model: SystemModel,
 
         options: {
             poll: true,
-            interval: 5000
+            interval: 60 * 1000
         },
 
         initialize: function() {
-            this.fetch();
-            if (this.options.poll) this.startPolling();
+            if (this.options.poll) this.startPolling({reset: true});
         },
 
-        startPolling: function() {
+        startPolling: function(options) {
             this.stopPolling();
+            this.fetch(options);
 
             var _this = this;
             this._pollInterval = setInterval(function() {
@@ -209,29 +260,10 @@
         },
     });
 
-    var Transitions = Backbone.View.extend({
+    var Transitions = CollectionView.extend({
         childView: Transition,
 
-        initialize: function() {
-            this.listenTo(this.collection, 'reset', this.reset, this)
-            this.listenTo(this.collection, 'add', this.add, this)
-        },
-
-        render: function() {
-            return this;
-        },
-
-        reset: function(collection, options) {
-            var _this = this;
-            collection.each(function(model) {
-                _this.add(model, collection, options);
-            });
-        },
-
-        add: function(model, collection, options) {
-            var view = new this.childView({
-                model: model
-            });
+        renderChild: function(view) {
             view.render();
             this.$el.prepend(view.el);
             return view;
@@ -246,20 +278,30 @@
             variable: 'data'
         }),
 
+        options: {
+            condensed: false
+        },
+
         initialize: function(options) {
+            this.listenTo(this.model, 'change', this.render, this);
+            this.listenTo(this.model, 'change:visible', this.toggle, this);
+
             this.$el.html(this.template(this.model.toJSON()));
 
             this.$name = this.$('.name');
             this.$meta = this.$('.meta');
             this.$transitions = this.$('.transitions');
 
-            this.listenTo(this.model, 'change', this.render, this);
-
             this.transitions = new Transitions(_.defaults({
                 el: this.$transitions,
                 collection: this.model.transitions
             }, options));
 
+            this.$el.append(this.transitions.el);
+
+            if (this.options.condensed) {
+                this.$el.addClass('condensed');
+            }
         },
 
         render: function() {
@@ -269,6 +311,36 @@
                 modified = renderTime(this.model.get('modified'));
 
             this.$meta.html('created: ' + created + ' &middot; ' + 'modified: ' + modified);
+        },
+
+        toggle: function(model, value, options) {
+            this.$el.toggle(this.model.get('visible'));
+        }
+    });
+
+
+    var Systems = Backbone.View.extend({
+        childView: System,
+
+        initialize: function() {
+            this.listenTo(this.collection, 'change:visible', this.show, this);
+            this.$el.html('<p class="loading">Loading...</p>');
+        },
+
+        show: function(model, value, options) {
+            // Ignore changes to visible that are false
+            if (!value) return;
+
+            if (this.previousView) {
+                this.previousView.model.stopPolling();
+                this.previousView.model.set('visible', false);
+                this.previousView.remove();
+            }
+            model.startPolling();
+            this.previousView = new this.childView({
+                model: model
+            });
+            this.$el.html(this.previousView.el);
         }
     });
 
@@ -276,13 +348,45 @@
     var Link = Backbone.View.extend({
         tagName: 'li',
 
+        template: _.template(systemLinkTemplate, null, {
+            variable: 'data'
+        }),
+
+        events: {
+            'click a': 'navigate'
+        },
+
+        initialize: function() {
+            this.listenTo(this.model, 'change', this.render, this);
+            this.listenTo(this.model, 'change:visible', this.toggle, this);
+
+            this.$el.html(this.template(this.model.toJSON()));
+        },
+
         render: function() {
-            this.$el.html('<a href="' + this.model.get('url') + '">' + this.model.get('name') + '</a>');
+            var icon = this.$('i');
+
+            if (this.model.get('in_transition')) {
+                icon.addClass('active');
+            } else if (this.model.get('failed_last_transition')) {
+                icon.addClass('failed');
+            } else {
+                icon.removeClass('active failed');
+            }
+        },
+
+        navigate: function(event) {
+            event.preventDefault();
+            this.model.set('visible', true);
+        },
+
+        toggle: function(model, value, options) {
+            this.$el.toggleClass('active', this.model.get('visible'));
         }
     });
 
 
-    var SystemLinks = Backbone.View.extend({
+    var SystemLinks = CollectionView.extend({
         tagName: 'ul',
 
         className: 'nav nav-list',
@@ -290,28 +394,8 @@
         childView: Link,
 
         initialize: function() {
-            this.listenTo(this.collection, 'reset', this.reset, this);
-            this.listenTo(this.collection, 'add', this.add, this);
-        },
-
-        render: function() {
-            return this;
-        },
-
-        reset: function(collection, options) {
-            var _this = this;
-            collection.each(function(model) {
-                _this.add(model, collection, options);
-            });
-        },
-
-        add: function(model, collection, options) {
-            var view = new this.childView({
-                model: model
-            });
-            view.render();
-            this.$el.append(view.el);
-            return view;
+            this.$el.html('<p class="loading">Loading...</p>');
+            CollectionView.prototype.initialize.apply(this, arguments);
         }
     });
 
@@ -322,6 +406,7 @@
     STS.Models.Transitions = TransitionCollection;
 
     STS.Views.System = System;
+    STS.Views.Systems = Systems;
     STS.Views.SystemLinks = SystemLinks;
     STS.Views.Transition = Transition;
     STS.Views.Transitions = Transitions;

@@ -1,5 +1,6 @@
 import json
 from django.http import HttpResponse
+from django.db.models import Count
 from django.shortcuts import render, get_object_or_404
 from django.core.serializers.json import DjangoJSONEncoder
 from django.core.urlresolvers import reverse
@@ -7,9 +8,32 @@ from .models import System
 from .utils import get_natural_duration
 
 
-def _system(system):
+def _system(system, include_transitions=True):
+    data = {
+        'id': system.pk,
+        'name': unicode(system),
+        'created': system.created,
+        'modified': system.modified,
+        'url': reverse('sts-system-detail', kwargs={'pk': system.pk}),
+        'in_transition': system.in_transition(),
+        'failed_last_transition': system.failed_last_transition(),
+    }
+
+    if system.content_type_id:
+        content_type = unicode(system.content_type).title()
+    else:
+        content_type = None
+
+    data['content_type'] = content_type
+
+    if include_transitions:
+        data['transitions'] = _transitions(system)
+    return data
+
+
+def _transitions(system):
     last = None
-    transitions = []
+    data = []
 
     for trans in system.transitions.select_related('event', 'state'):
         # Get the delay from the last transition if one exists
@@ -20,7 +44,7 @@ def _system(system):
 
         last = trans
 
-        transitions.append({
+        data.append({
             'id': trans.pk,
             'state': unicode(trans.state),
             'event': trans.event_id and unicode(trans.event) or None,
@@ -33,52 +57,30 @@ def _system(system):
             'delay': delay,
         })
 
-    return {
-        'id': system.pk,
-        'name': unicode(system),
-        'created': system.created,
-        'modified': system.modified,
-        'url': reverse('sts-system-detail', kwargs={'pk': system.pk}),
-        'transitions': transitions,
-        'in_transition': system.in_transition(),
-    }
+    return data
 
 
-def _system_urls(systems):
-    urls = []
+def _systems(systems, include_transitions=True):
+    data = []
 
     for system in systems:
-        urls.append({
-            'id': system.pk,
-            'name': unicode(system),
-            'created': system.created,
-            'modified': system.modified,
-            'url': reverse('sts-system-detail', kwargs={'pk': system.pk}),
-            'in_transition': system.in_transition(),
-        })
+        # Ignore orphaned systems
+        if system.object_id and not system.content_object:
+            continue
+        data.append(_system(system, include_transitions=include_transitions))
 
-    return urls
+    return data
 
 
-def systems(request):
-    systems = System.objects.all()
-    data = json.dumps(_system_urls(systems), cls=DjangoJSONEncoder)
+def systems(request, pk=None):
+    systems = System.objects.annotate(count=Count('transitions')).filter(count__gt=0)
 
-    if request.is_ajax():
-        return HttpResponse(data, mimetype='application/json')
-
-    return render(request, 'sts/systems.html', {
-        'system_links': data,
-    })
-
-
-def system_detail(request, pk):
-    system = get_object_or_404(System, pk=pk)
+    if pk:
+        data = _system(get_object_or_404(systems, pk=pk))
+    else:
+        data = _systems(systems, include_transitions=False)
 
     if request.is_ajax():
-        data = json.dumps(_system(system), cls=DjangoJSONEncoder)
-        return HttpResponse(data, mimetype='application/json')
-
-    return render(request, 'sts/system_detail.html', {
-        'system': system,
-    })
+        return HttpResponse(json.dumps(data, cls=DjangoJSONEncoder),
+            mimetype='application/json')
+    return render(request, 'sts/systems.html')

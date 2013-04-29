@@ -24,7 +24,7 @@
 }
 
 .transition .event::before {
-    content: '\21d0';
+    content: '\2190';
     margin-right: 5px;
 }
 
@@ -67,10 +67,74 @@
 }
 
 .system-links {
-    border-right: 1px solid #eee;
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 200px;
+    background-color: #eee;
+    text-shadow: 0 1px 1px #fff;
+    padding: 20px;
+    overflow: auto;
+}
+
+.system-links .nav-list {
+    padding-left: 0;
+    padding-right: 0;
+}
+
+.system-links .nav-list li i {
+    color: #ccc;
+    float: right;
+    margin-top: 6px;
+    text-shadow: none;
+}
+
+.system-links .nav-list li i.active {
+    color: #2980b9;
+}
+
+.system-links .nav-list li i.failed {
+    color: #c0392b;
+}
+
+.system-links .nav-list li.active i {
+    float: right;
+    margin-top: 6px;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.system-links .nav-list li.active a {
+    background-color: #3498db;
+}
+
+.system-links a small {
+    font-size: 0.8em;
+    font-weight: 600;
+}
+
+.systems {
+    box-shadow: -2px 0 5px #ccc;
+    border-left: 1px solid #aaa;
+    position: fixed;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    left: 240px;
+    padding: 20px 40px;
+    overflow: auto;
+}
+
+.system-links > :first-child, .system > :first-child {
+    margin-top: 0;
+}
+
+.system-links .loading, .systems .loading {
+    color: #999;
 }
 
 .system {
+    position: relative;
 }
 
 .system .meta {

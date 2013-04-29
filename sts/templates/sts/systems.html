@@ -1,13 +1,44 @@
 {% extends "sts/base.html" %}
+{% load url from future %}
 
 {% block content %}
-    <div class=page-header>
-        <h1>All Systems</h1>
+    <div class="system-links">
+        <h4>Systems</h4>
     </div>
+    <div class="systems"></div>
 {% endblock %}
 
 {% block scripts %}
     <script>
-        $(function() {});
+        $(function() {
+            var collection = new STS.Models.Systems(null, {
+                url: STS.config.root
+            });
+
+            var view = new STS.Views.Systems({
+                collection: collection
+            });
+
+            var links = new STS.Views.SystemLinks({
+                collection: collection
+            });
+
+            // Activate the initial system
+            collection.once('reset', function(collection, options) {
+                var id, match, model;
+                if (!collection.length) return;
+
+                // Match on the current location
+                if ((match = window.location.pathname.match(/\d+/g))) {
+                    model = collection.get(match[0])
+                } else {
+                    model = collection.models[0];
+                }
+                model.set('visible', true);
+            });
+
+            $('.system-links').append(links.render().el);
+            $('.systems').append(view.render().el);
+        });
     </script>
 {% endblock %}
