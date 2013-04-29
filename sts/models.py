@@ -1,7 +1,5 @@
-from datetime import datetime
 from django.db import models, transaction
 from django.contrib.contenttypes.models import ContentType
-from django.utils.timesince import timesince
 from django.contrib.contenttypes import generic
 from django.utils import timezone
 from .utils import classproperty, get_duration, get_natural_duration
@@ -176,6 +174,13 @@ class System(models.Model):
 
     def in_transition(self):
         return self.transitions.filter(state=State.TRANSITION).exists()
+
+    def failed_last_transition(self):
+        try:
+            return self.transitions.select_related('state')\
+                .latest('start_time').failed
+        except Transition.DoesNotExist:
+            pass
 
     @transaction.commit_on_success
     def start_transition(self, event=None, start_time=None, save=True):
