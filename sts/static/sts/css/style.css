@@ -30,7 +30,7 @@
 
 .transition .delay {
     position: absolute;
-    top: -0.85em;
+    bottom: -0.85em;
     left: 1em;
     color: #ccc;
     font-size: 0.85em;
@@ -52,13 +52,7 @@
 .transition .message {
     color: #999;
     font-size: 0.85em;
-    margin: 0;
-}
-
-.transition .message::before {
-    content: '\230a';
-    margin-left: 10px;
-    margin-right: 5px;
+    margin-top: 5px;
 }
 
 .transition .duration {
@@ -70,6 +64,10 @@
     font-weight: 500;
     left: 5px;
     top: 0;
+}
+
+.system-links {
+    border-right: 1px solid #eee;
 }
 
 .system {

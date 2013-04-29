@@ -34,11 +34,13 @@ def _system(system):
         })
 
     return {
+        'id': system.pk,
         'name': unicode(system),
         'created': system.created,
         'modified': system.modified,
         'url': reverse('sts-system-detail', kwargs={'pk': system.pk}),
         'transitions': transitions,
+        'in_transition': system.in_transition(),
     }
 
 
@@ -47,10 +49,12 @@ def _system_urls(systems):
 
     for system in systems:
         urls.append({
+            'id': system.pk,
             'name': unicode(system),
             'created': system.created,
             'modified': system.modified,
             'url': reverse('sts-system-detail', kwargs={'pk': system.pk}),
+            'in_transition': system.in_transition(),
         })
 
     return urls

@@ -59,16 +59,22 @@
             interval: 5000
         },
 
-        initialize: function() {
+        url: function() {
+            return this.get('url');
+        },
+
+        initialize: function(attrs, options) {
+            _.extend(this.options, _.pick(options, ['poll', 'interval']));
             this.transitions = new TransitionCollection;
             this.fetch({parse: true});
-
             if (this.options.poll) this.startPolling();
         },
 
         parse: function(attrs, options) {
-            this.transitions.set(attrs.transitions, options);
-            delete attrs.transitions;
+            if (attrs.transitions != null) {
+                this.transitions.set(attrs.transitions, options);
+                delete attrs.transitions;
+            }
             return attrs;
         },
 
@@ -78,6 +84,37 @@
             var _this = this;
             this._pollInterval = setInterval(function() {
                 _this.fetch({parse: true});
+            }, this.options.interval);
+        },
+
+        stopPolling: function() {
+            clearInterval(this._pollInterval);
+        }
+    });
+
+
+    var SystemCollection = Backbone.Collection.extend({
+        model: function(attrs, options) {
+            options.poll = false;
+            return new SystemModel(attrs, options);
+        },
+
+        options: {
+            poll: true,
+            interval: 5000
+        },
+
+        initialize: function() {
+            this.fetch();
+            if (this.options.poll) this.startPolling();
+        },
+
+        startPolling: function() {
+            this.stopPolling();
+
+            var _this = this;
+            this._pollInterval = setInterval(function() {
+                _this.fetch();
             }, this.options.interval);
         },
 
@@ -196,7 +233,7 @@
                 model: model
             });
             view.render();
-            this.$el.append(view.el);
+            this.$el.prepend(view.el);
             return view;
         }
     });
@@ -236,11 +273,56 @@
     });
 
 
+    var Link = Backbone.View.extend({
+        tagName: 'li',
+
+        render: function() {
+            this.$el.html('<a href="' + this.model.get('url') + '">' + this.model.get('name') + '</a>');
+        }
+    });
+
+
+    var SystemLinks = Backbone.View.extend({
+        tagName: 'ul',
+
+        className: 'nav nav-list',
+
+        childView: Link,
+
+        initialize: function() {
+            this.listenTo(this.collection, 'reset', this.reset, this);
+            this.listenTo(this.collection, 'add', this.add, this);
+        },
+
+        render: function() {
+            return this;
+        },
+
+        reset: function(collection, options) {
+            var _this = this;
+            collection.each(function(model) {
+                _this.add(model, collection, options);
+            });
+        },
+
+        add: function(model, collection, options) {
+            var view = new this.childView({
+                model: model
+            });
+            view.render();
+            this.$el.append(view.el);
+            return view;
+        }
+    });
+
+
     STS.Models.System = SystemModel;
+    STS.Models.Systems = SystemCollection;
     STS.Models.Transition = TransitionModel;
     STS.Models.Transitions = TransitionCollection;
 
     STS.Views.System = System;
+    STS.Views.SystemLinks = SystemLinks;
     STS.Views.Transition = Transition;
     STS.Views.Transitions = Transitions;
 

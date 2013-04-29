@@ -1,12 +1,23 @@
 {% extends "sts/base.html" %}
 
 {% block content %}
-    <div class="system"></div>
+    <div class=row-fluid>
+        <div class="span4 system-links">
+            <h4>Systems</h4>
+        </div>
+        <div class=span8>
+            <div class="system"></div>
+        </div>
+    </div>
 {% endblock %}
 
 {% block scripts %}
     <script>
         $(function() {
+            var collection = new STS.Models.Systems(null, {
+                url: '{% url "sts.views.systems" %}'
+            });
+
             var model = new STS.Models.System(null, {
                 url: '{% url "sts.views.system_detail" system.pk %}'
             });
@@ -15,6 +26,12 @@
                 el: '.system',
                 model: model
             });
+
+            var links = new STS.Views.SystemLinks({
+                collection: collection
+            });
+
+            $('.system-links').append(links.render().el);
         });
     </script>
 {% endblock %}
