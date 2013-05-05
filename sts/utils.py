@@ -38,9 +38,9 @@ def get_natural_duration(start_time, end_time=None, short=False):
     duration = int(round((end_time - start_time).total_seconds() * 1000))
 
     if duration < 1000:
-        return '{} milliseconds'.format(duration)
+        return '{0} milliseconds'.format(duration)
     if duration < 60000:
-        return '{} seconds'.format(int(round(duration / 1000.0)))
+        return '{0} seconds'.format(int(round(duration / 1000.0)))
     since = timesince(start_time, end_time)
 
     if short:

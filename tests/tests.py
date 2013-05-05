@@ -83,7 +83,7 @@ class SystemTestCase(TestCase):
         self.assertRaises(ValueError, system.__getitem__, slice(None, None))
 
         for i in range(1, 6):
-            system.transition('Count {}'.format(i), event='Incr 1')
+            system.transition('Count {0}'.format(i), event='Incr 1')
 
         # Don't be confused.. indexing is zero-based, while counting is 1-based
         self.assertEqual([str(t.state) for t in system[:3]],

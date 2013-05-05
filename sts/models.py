@@ -309,13 +309,13 @@ class Transition(models.Model):
 
     def __unicode__(self):
         if self.event_id:
-            text = '{} => {}'.format(self.event, self.state)
+            text = '{0} => {1}'.format(self.event, self.state)
         else:
             text = unicode(self.state)
         if self.duration:
-            text = '{} ({})'.format(text, self.natural_duration)
+            text = '{0} ({1})'.format(text, self.natural_duration)
         elif self.in_transition():
-            text = '{} (in transition)'.format(text)
+            text = '{0} (in transition)'.format(text)
         return text
 
     def in_transition(self):
