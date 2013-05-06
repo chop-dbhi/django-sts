@@ -3,13 +3,14 @@ import datetime
 from south.db import db
 from south.v2 import DataMigration
 from django.db import models
+from sts.utils import total_seconds
 
 class Migration(DataMigration):
 
     def forwards(self, orm):
         "Write your forwards methods here."
         for t in orm['sts.Transition'].objects.filter(end_time__isnull=False):
-            t.duration = int(round((t.end_time - t.start_time).total_seconds() * 1000))
+            t.duration = int(round(total_seconds(t.end_time - t.start_time) * 1000))
             t.save()
 
     def backwards(self, orm):

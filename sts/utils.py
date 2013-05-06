@@ -1,6 +1,12 @@
 import re
+import sys
 from django.utils import timezone
 from django.utils.timesince import timesince
+
+def total_seconds(td):
+    if sys.version_info < (2, 7):
+        return (td.microseconds + (td.seconds + td.days * 24 * 3600) * 1e6) / 1e6
+    return td.total_seconds()
 
 
 short_units = {
@@ -27,7 +33,7 @@ def get_duration(start_time, end_time=None):
     "Returns the duration in milliseconds between two times."
     if end_time is None:
         end_time = timezone.now()
-    return int(round((end_time - start_time).total_seconds() * 1000))
+    return int(round(total_seconds(end_time - start_time) * 1000))
 
 
 def get_natural_duration(start_time, end_time=None, short=False):
@@ -35,7 +41,7 @@ def get_natural_duration(start_time, end_time=None, short=False):
     if end_time is None:
         end_time = timezone.now()
 
-    duration = int(round((end_time - start_time).total_seconds() * 1000))
+    duration = int(round(total_seconds(end_time - start_time) * 1000))
 
     if duration < 1000:
         return '{0} milliseconds'.format(duration)
