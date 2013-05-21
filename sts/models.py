@@ -1,8 +1,19 @@
-from django.db import models, transaction
+from django.db import models, transaction, IntegrityError
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes import generic
 from django.utils import timezone
 from .utils import classproperty, get_duration, get_natural_duration
+
+
+def _get_or_create(klass, **kwargs):
+    "Mimic logic Manager.get_or_create without savepoints"
+    try:
+        return klass.objects.get(**kwargs)
+    except klass.DoesNotExist:
+        try:
+            return klass.objects.create(**kwargs)
+        except IntegrityError:
+            return klass.objects.get(**kwargs)
 
 
 class STSError(Exception):
@@ -30,7 +41,7 @@ class State(models.Model):
             return name
         if isinstance(name, int):
             return cls.objects.get(pk=name)
-        return cls.objects.get_or_create(name=name)[0]
+        return _get_or_create(cls, name=name)
 
 
 class Event(models.Model):
@@ -48,7 +59,7 @@ class Event(models.Model):
             return name
         if isinstance(name, int):
             return cls.objects.get(pk=name)
-        return cls.objects.get_or_create(name=name)[0]
+        return _get_or_create(cls, name=name)
 
 
 class System(models.Model):
@@ -142,8 +153,7 @@ class System(models.Model):
 
         # String, so get or create a system by this name
         if isinstance(obj_or_name, basestring):
-            system, created = cls.objects.get_or_create(name=obj_or_name)
-            return system
+            return _get_or_create(cls, name=obj_or_name)
 
         # Fallback to model object
         obj = obj_or_name
