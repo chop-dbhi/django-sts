@@ -16,3 +16,5 @@ def get_version(short=False):
     return ''.join(vers)
 
 __version__ = get_version()
+
+from .shortcuts import *
